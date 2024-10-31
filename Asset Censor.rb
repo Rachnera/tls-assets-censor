@@ -24,3 +24,15 @@ module Cache
     end
   end
 end
+
+class Window_SystemOptions < Window_Command
+  alias_method :unaltered_change_custom_switch, :change_custom_switch
+  def change_custom_switch(direction)
+    unaltered_change_custom_switch(direction)
+
+    # Force reloading of images when enabling/disabling NSFW
+    if current_ext == :hide_nsfw
+      Cache.clear
+    end
+  end
+end
