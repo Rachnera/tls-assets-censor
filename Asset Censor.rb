@@ -2,37 +2,29 @@ module Cache
   class << self  
     alias_method :unaltered_load_bitmap, :load_bitmap
     def load_bitmap(folder_name, filename, hue = 0)
-      if try_to_load_censored_version_instead?(folder_name, filename)
-        begin
-          return unaltered_load_bitmap("censored/" + folder_name, filename, hue)
-        rescue Errno::ENOENT
-          # No censored version of the image found, proceed as usual
-        end
+      if $game_switches && $game_switches[6] && has_censored_version?(folder_name + filename)
+        return unaltered_load_bitmap(censored_folder + folder_name, filename, hue)
       end
 
       return unaltered_load_bitmap(folder_name, filename, hue)
     end
 
-    def try_to_load_censored_version_instead?(folder_name, filename)
-      # Skip if NSFW is on
-      return false unless $game_switches && $game_switches[6]
+    def has_censored_version?(filepath)
+      @censored_or_not ||= {}
 
-      # Skip if image already in cache, so supposedly checked previously
-      return false if @cache && include?(folder_name + filename)
+      return @censored_or_not[filepath] if @censored_or_not.has_key?(filepath)
 
-      true
+      begin
+        normal_bitmap(censored_folder + filepath)
+        @censored_or_not[filepath] = true
+      rescue Errno::ENOENT
+        @censored_or_not[filepath] = false
+      end
+      @censored_or_not[filepath]
     end
-  end
-end
 
-class Window_SystemOptions < Window_Command
-  alias_method :unaltered_change_custom_switch, :change_custom_switch
-  def change_custom_switch(direction)
-    unaltered_change_custom_switch(direction)
-
-    # Force reloading of images when enabling/disabling NSFW
-    if current_ext == :hide_nsfw
-      Cache.clear
+    def censored_folder
+      "censored/"
     end
   end
 end
