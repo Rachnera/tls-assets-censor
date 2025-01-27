@@ -24,7 +24,7 @@ module Cache
     end
 
     def censored_folder
-      "censored/"
+      "SFW/"
     end
   end
 end
