@@ -2,8 +2,15 @@ module Cache
   class << self  
     alias_method :unaltered_load_bitmap, :load_bitmap
     def load_bitmap(folder_name, filename, hue = 0)
-      if $game_switches && $game_switches[6] && has_censored_version?(folder_name + filename)
-        return unaltered_load_bitmap(censored_folder + folder_name, filename, hue)
+      file_path = folder_name + filename
+      if $game_switches && $game_switches[6]
+        # Purposefully ignore System/ images (like the titlescreen) and likewise
+        if file_path.start_with?('Graphics/')
+          key_path = file_path.sub('Graphics/', '')
+          if has_censored_version?(key_path)
+            return unaltered_load_bitmap(censored_folder, key_path, hue)
+          end
+        end
       end
 
       return unaltered_load_bitmap(folder_name, filename, hue)
@@ -24,7 +31,7 @@ module Cache
     end
 
     def censored_folder
-      "SFW/"
+      "Graphics/SFW/"
     end
   end
 end
